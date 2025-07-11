@@ -100,6 +100,7 @@ python experiment_runner.py \
   --epochs 250 \
   --batch_size 128 \
   --num_repeats 7 \
+  --hidden_layer_size 7 \
   --lr 0.001 \
   --weight_decay 1e-4 \
   --seed 42
@@ -108,9 +109,25 @@ python experiment_runner.py \
 * **--epochs**: Number of epochs (default: 250)
 * **--batch\_size**: Batch size (default: 128)
 * **--num\_repeats**: Number of repeats (default: 7)
+* **--hidden\_layer\_size**: Number of hidden layers in the MLP (excluding input and output layers) (default: 7)
 * **--lr**: Learning rate for baseline optimizers
 * **--weight\_decay**: For AdamW/AdaBelief only
 * **--seed**: Random seed
+
+> **Dataset note**
+> Because XLA's static graph can balloon in size, each run is limited to **two datasets** at a time.
+> By default the script trains on **MNIST** and **CIFAR‑10**.
+> To test other datasets (WineQuality‑Red, UCI HAR, synthetic Gaussians, …), uncomment the corresponding loaders in `experiment_runner.py` and launch a **separate run** for each additional pair.
+
+### Output files
+
+After training finishes you will find:
+
+* `logs/experiment_results.csv` – one‑row summary per dataset × optimizer
+* `data/train/*.csv` – epoch‑vs‑**train loss** curves (optimizer × repeat)
+* `data/val/*.csv` – epoch‑vs‑**validation loss** curves
+
+These CSVs can be plotted directly with `plot_from_csv.py`.
 
 ### B. WineQuality-Red Sensitivity Analysis
 
@@ -131,14 +148,14 @@ All parameter combinations defined in the script’s `ParameterGrid` are execute
 | **plot\_from\_csv.py** | `data/train/*.csv` <br>`data/val/*.csv` | `figures/train_mean/*.png` <br>`figures/val_mean/*.png` <br>*Individual curves: `figures/train/`, `figures/val/` — uncomment in script to enable* |
 | **plot\_results.py**   | `logs/experiment_results.csv`           | `figures/comparison_*.png` *(per metric)*                                                                                                         |
 
-> Both scripts require no command-line arguments.<br>Simply run `python plot_from_csv.py` or `python plot_results.py`.
+> Both scripts require no command‑line arguments.<br>Simply run `python plot_from_csv.py` or `python plot_results.py`.
 
-| Logs Path                               | Description                                                                                                                                           |
-| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `logs/full_sensitivity_summary.csv`     | Summary of val_loss, val_acc, val_f1, and time for every combination of dropout rate, label smoothing (smooth_alpha), number of hidden layers, optimizer, and run. |
-| `logs/full_sensitivity_summary.parquet` | Same content saved in Parquet format                                                                                                                  |
-| `logs/full_sensitivity_histories.json`  | Full Keras history for each experiment run                                                                                                            |
-| `logs/val_loss_plots/*.png`             | Validation loss curves for each parameter combination × run                                                                                           |
+| Logs Path                               | Description                                                                                                                                                            |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `logs/full_sensitivity_summary.csv`     | Summary of val\_loss, val\_acc, val\_f1, and time for every combination of dropout rate, label smoothing (smooth\_alpha), number of hidden layers, optimizer, and run. |
+| `logs/full_sensitivity_summary.parquet` | Same content saved in Parquet format                                                                                                                                   |
+| `logs/full_sensitivity_histories.json`  | Full Keras history for each experiment run                                                                                                                             |
+| `logs/val_loss_plots/*.png`             | Validation loss curves for each parameter combination × run                                                                                                            |
 
 ---
 

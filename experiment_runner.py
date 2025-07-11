@@ -33,25 +33,27 @@ for gpu in gpus:
 # 0. argparse로 하이퍼파라미터 & 옵션 받기
 # ────────────────────────────────────────────────
 parser = argparse.ArgumentParser(description="Optimizer 비교 실험 스크립트")
-parser.add_argument('--num_repeats',  type=int,   default=7,     help='실험 반복 횟수')
-parser.add_argument('--epochs',       type=int,   default=250,   help='학습 에폭 수')
-parser.add_argument('--batch_size',   type=int,   default=128,    help='배치 크기')
-parser.add_argument('--lr',           type=float, default=1e-3,  help='학습률')
-parser.add_argument('--weight_decay', type=float, default=1e-4,  help='Weight decay 값')
-parser.add_argument('--seed',         type=int,   default=0,     help='랜덤 시드')
+parser.add_argument('--num_repeats',        type=int,   default=7,     help='실험 반복 횟수')
+parser.add_argument('--hidden_layer_size',  type=int,   default=10,     help='은닉층 수')
+parser.add_argument('--epochs',             type=int,   default=250,   help='학습 에폭 수')
+parser.add_argument('--batch_size',         type=int,   default=128,   help='배치 크기')
+parser.add_argument('--lr',                 type=float, default=1e-3,  help='학습률')
+parser.add_argument('--weight_decay',       type=float, default=1e-4,  help='Weight decay 값')
+parser.add_argument('--seed',               type=int,   default=0,     help='랜덤 시드')
 args = parser.parse_args()
 
-NUM_REPEATS   = args.num_repeats
-EPOCHS        = args.epochs
-BATCH_SIZE    = args.batch_size
-LR            = args.lr
-WEIGHT_DECAY  = args.weight_decay
-SEED          = args.seed
-SAVE_INTERVAL = 5
-DELTA         = 0.02
-BATCH_NORM    = True
-dropout_rate  = 0.004
-label_smoothing = 0.025
+NUM_REPEATS         = args.num_repeats
+HIDDEN_LAYER_SIZE   = args.hidden_layer_size
+EPOCHS              = args.epochs
+BATCH_SIZE          = args.batch_size
+LR                  = args.lr
+WEIGHT_DECAY        = args.weight_decay
+SEED                = args.seed
+SAVE_INTERVAL       = 5
+DELTA               = 0.02
+BATCH_NORM          = True
+dropout_rate        = 0.004
+label_smoothing     = 0.025
 
 # ────────────────────────────────────────────────
 # 재현성을 위해 시드 고정
@@ -290,13 +292,13 @@ def load_mitbih_arrhythmia(test_size=0.2, random_state=None):
 gauss_configs = [
     # {'name': 'Gauss_sep0.5_clust1', 'class_sep': 0.5, 'n_clusters_per_class': 1, 'flip_y': 0.0},
     # {'name': 'Gauss_sep1.0_clust3', 'class_sep': 1.0, 'n_clusters_per_class': 3, 'flip_y': 0.0},
-    {'name': 'Gauss_sep2.0_clust5', 'class_sep': 2.0, 'n_clusters_per_class': 5, 'flip_y': 0.0},
-    {'name': 'Gauss_sep1.0_clust3_flip0.05', 'class_sep': 1.0, 'n_clusters_per_class': 3, 'flip_y': 0.05},
+    # {'name': 'Gauss_sep2.0_clust5', 'class_sep': 2.0, 'n_clusters_per_class': 5, 'flip_y': 0.0},
+    # {'name': 'Gauss_sep1.0_clust3_flip0.05', 'class_sep': 1.0, 'n_clusters_per_class': 3, 'flip_y': 0.05},
 ]
 
 datasets = {
-    # "MNIST":      load_mnist,
-    # "CIFAR10":    load_cifar10,
+    "MNIST":      load_mnist,
+    "CIFAR10":    load_cifar10,
     # "CIFAR100":   load_cifar100,
     # "20NG":       load_20newsgroups,
     # "Imbalance":  load_imbalance,
@@ -350,7 +352,7 @@ for name, loader in datasets.items():
 
         input_dim    = X_train.shape[1]
         num_classes  = y_train.shape[1]
-        layer_sizes  = [input_dim] + [64]*10 + [num_classes]
+        layer_sizes  = [input_dim] + [64]*HIDDEN_LAYER_SIZE + [num_classes]
 
         # ── 2-1. Custom ────────────────────────────────────────
         dnn = DNN(layer_sizes=layer_sizes, batch_size=BATCH_SIZE)
