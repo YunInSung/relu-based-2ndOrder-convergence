@@ -100,7 +100,7 @@ python experiment_runner.py \
   --epochs 250 \
   --batch_size 128 \
   --num_repeats 7 \
-  --hidden_layer_size 7 \
+  --hidden_layer_size 10 \
   --lr 0.001 \
   --weight_decay 1e-4 \
   --seed 42
@@ -109,7 +109,7 @@ python experiment_runner.py \
 * **--epochs**: Number of epochs (default: 250)
 * **--batch\_size**: Batch size (default: 128)
 * **--num\_repeats**: Number of repeats (default: 7)
-* **--hidden\_layer\_size**: Number of hidden layers in the MLP (excluding input and output layers) (default: 7)
+* **--hidden\_layer\_size**: Number of hidden layers in the MLP (excluding input and output layers) (default: 10)
 * **--lr**: Learning rate for baseline optimizers
 * **--weight\_decay**: For AdamW/AdaBelief only
 * **--seed**: Random seed
