@@ -2,7 +2,7 @@
 
 *Custom Optimizer · Adam · AdamW · AdaBelief*
 
-This repository includes the key scripts required to reproduce all experiments from "A Globally Convergent Second‑Order Optimization Method Utilizing the Diagonal Hessian in ReLU‑Based Models":
+This repository includes the key scripts required to reproduce all experiments from "A Globally Convergent Second-Order Optimization Method Utilizing the Diagonal Hessian in ReLU-Based Models":
 
 * `experiment_runner.py`: Runs the full suite of experiments
 * `prepare_har.py`: Preprocesses the UCI HAR data
