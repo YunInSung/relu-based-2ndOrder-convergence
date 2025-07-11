@@ -135,7 +135,7 @@ All parameter combinations defined in the script’s `ParameterGrid` are execute
 
 | Logs Path                               | Description                                                                                                                                           |
 | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `logs/full_sensitivity_summary.csv`     | Summary of *val\_loss, time, acc, f1* for all parameter combinations × repeats                                                 fileciteturn9file12 |
+| `logs/full_sensitivity_summary.csv`     | Summary of val_loss, val_acc, val_f1, and time for every combination of dropout rate, label smoothing (smooth_alpha), number of hidden layers, optimizer, and run. |
 | `logs/full_sensitivity_summary.parquet` | Same content saved in Parquet format                                                                                                                  |
 | `logs/full_sensitivity_histories.json`  | Full Keras history for each experiment run                                                                                                            |
 | `logs/val_loss_plots/*.png`             | Validation loss curves for each parameter combination × run                                                                                           |
