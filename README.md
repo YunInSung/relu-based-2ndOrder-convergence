@@ -37,6 +37,9 @@ This repository includes the key scripts required to reproduce all experiments f
 
 ## 🛠 Installation
 
+> **GPU vs. CPU**
+> A CUDA‑compatible GPU (CUDA 12.1 + cuDNN 9.9) is strongly recommended for reasonable training times. If TensorFlow does not detect a GPU, the scripts automatically fall back to **CPU mode**, which can be **≈ 10× slower** for MNIST/CIFAR‑10 and substantially more for larger datasets.
+
 ```bash
 git clone https://github.com/YunInSung/relu-based-2ndOrder-convergence.git
 cd relu-based-2ndOrder-convergence
