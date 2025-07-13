@@ -2,7 +2,6 @@ import os, time
 import argparse
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import tensorflow as tf
 from scipy.stats import ttest_rel, t
 from tensorflow.keras import Sequential
@@ -18,10 +17,6 @@ from sklearn.metrics import accuracy_score, f1_score
 from pathlib import Path          # ← NEW
 import tensorflow_addons as tfa
 import gc
-import shutil
-
-import wfdb
-from wfdb import processing
 
 from DNN import DNN        # ← 사용자 정의 옵티마이저/모델
 
