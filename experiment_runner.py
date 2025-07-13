@@ -29,84 +29,9 @@ gpus = tf.config.experimental.list_physical_devices('GPU')
 for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 
-# ────────────────────────────────────────────────
-# 0. argparse로 하이퍼파라미터 & 옵션 받기
-# ────────────────────────────────────────────────
-parser = argparse.ArgumentParser(description="Optimizer 비교 실험 스크립트")
-parser.add_argument('--num_repeats',        type=int,   default=7,     help='실험 반복 횟수')
-parser.add_argument('--hidden_layer_size',  type=int,   default=10,     help='은닉층 수')
-parser.add_argument('--epochs',             type=int,   default=250,   help='학습 에폭 수')
-parser.add_argument('--batch_size',         type=int,   default=128,   help='배치 크기')
-parser.add_argument('--lr',                 type=float, default=1e-3,  help='학습률')
-parser.add_argument('--weight_decay',       type=float, default=1e-4,  help='Weight decay 값')
-parser.add_argument('--seed',               type=int,   default=0,     help='랜덤 시드')
-args = parser.parse_args()
-
-NUM_REPEATS         = args.num_repeats
-HIDDEN_LAYER_SIZE   = args.hidden_layer_size
-EPOCHS              = args.epochs
-BATCH_SIZE          = args.batch_size
-LR                  = args.lr
-WEIGHT_DECAY        = args.weight_decay
-SEED                = args.seed
-SAVE_INTERVAL       = 5
-DELTA               = 0.02
-BATCH_NORM          = True
-dropout_rate        = 0.004
-label_smoothing     = 0.025
-
-# ────────────────────────────────────────────────
-# 재현성을 위해 시드 고정
-# ────────────────────────────────────────────────
-os.environ['TF_DETERMINISTIC_OPS'] = '1'
-tf.config.experimental.enable_op_determinism()
-
-# ────────────────────────────────────────────────
-# 폴더 생성
-# ────────────────────────────────────────────────
-os.makedirs("figures", exist_ok=True)
-os.makedirs("logs", exist_ok=True)
-
-# --- 방어적 noninf / tost ---
-def noninf(x, y, delta):
-    d = x - y
-    if len(d) < 2 or d.std(ddof=1) == 0:
-        return np.nan
-    tstat = (d.mean() - delta) / (d.std(ddof=1) / np.sqrt(len(d)))
-    return t.cdf(tstat, df=len(d)-1)
-
-def tost(x, y, delta):
-    """Two One-Sided Test equivalence p-value."""
-    d = x - y
-    se = d.std(ddof=1) / np.sqrt(len(d))
-    t_low = (d.mean() + delta) / se       # upper bound
-    t_up  = (d.mean() - delta) / se       # lower bound
-    p_low = 1 - t.cdf(t_low, df=len(d)-1)
-    p_up  =     t.cdf(t_up,  df=len(d)-1)
-    return max(p_low, p_up)
-
-class TimeValHistory(tf.keras.callbacks.Callback):
-    """Keras 콜백 – 에폭별 소요시간 & val-loss 기록"""
-    def on_train_begin(self, logs=None):
-        self.times, self.val_losses = [], []
-        self.start = time.perf_counter()
-    def on_epoch_end(self, epoch, logs=None):
-        self.times.append(time.perf_counter() - self.start)
-        self.val_losses.append(logs["val_loss"])
-
-def cohens_d(x, y):
-    """
-    Compute Cohen's d for two arrays x, y.
-    d = (mean(x) - mean(y)) / pooled_sd
-    """
-    nx, ny = len(x), len(y)
-    mx, my = np.mean(x), np.mean(y)
-    vx, vy = np.var(x, ddof=1), np.var(y, ddof=1)
-    pooled_sd = np.sqrt(((nx-1)*vx + (ny-1)*vy) / (nx+ny-2))
-    return (mx - my) / pooled_sd
 
 # ────────────────────────────────
-# 1. 데이터 로더
+# 0. 데이터 로더
 # ────────────────────────────────
 def load_mnist(random_state=None):
     (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
@@ -242,69 +167,23 @@ def load_har_ucihar(random_state=42):
     )
 
 
-def load_mitbih_arrhythmia(test_size=0.2, random_state=None):
-    records = wfdb.get_record_list('mitdb')
-    X, y = [], []
-
-    for rec in records:
-        record = wfdb.rdrecord(rec, pn_dir='mitdb')
-        ann    = wfdb.rdann(  rec, 'atr',  pn_dir='mitdb')
-
-        sig = record.p_signal[:, 0]
-        fs  = record.fs
-
-        # QRS 검출: WFDB 버전에 맞춰 하나 선택
-        try:
-            qrs_inds = processing.gqrs_detect(sig=sig, fs=fs)
-        except AttributeError:
-            # 구버전일 경우 xqrs_detect 사용
-            qrs_inds = processing.xqrs_detect(sig=sig, fs=fs)
-
-        before, after = int(0.2 * fs), int(0.3 * fs)
-        for peak in qrs_inds:
-            start, end = peak - before, peak + after
-            if start < 0 or end > len(sig): continue
-
-            segment = sig[start:end]
-            X.append(segment)
-
-            idx    = np.searchsorted(ann.sample, peak)
-            symbol = ann.symbol[idx]
-            if symbol == 'N':
-                y.append(0)
-            elif symbol in ('V','E'):
-                y.append(1)
-            else:
-                y.append(2)
-
-    X = np.stack(X).astype(np.float32)
-    y = np.array(y)
-    y_cat = to_categorical(y, num_classes=len(np.unique(y)))
-
-    return train_test_split(
-        X, y_cat,
-        test_size=test_size,
-        stratify=y,
-        random_state=random_state
-    )
-
 # 1) 데이터셋 설정 목록 정의
 gauss_configs = [
-    # {'name': 'Gauss_sep0.5_clust1', 'class_sep': 0.5, 'n_clusters_per_class': 1, 'flip_y': 0.0},
-    # {'name': 'Gauss_sep1.0_clust3', 'class_sep': 1.0, 'n_clusters_per_class': 3, 'flip_y': 0.0},
-    # {'name': 'Gauss_sep2.0_clust5', 'class_sep': 2.0, 'n_clusters_per_class': 5, 'flip_y': 0.0},
-    # {'name': 'Gauss_sep1.0_clust3_flip0.05', 'class_sep': 1.0, 'n_clusters_per_class': 3, 'flip_y': 0.05},
+    {'name': 'Gauss_sep0.5_clust1', 'class_sep': 0.5, 'n_clusters_per_class': 1, 'flip_y': 0.0},
+    {'name': 'Gauss_sep1.0_clust3', 'class_sep': 1.0, 'n_clusters_per_class': 3, 'flip_y': 0.0},
+    {'name': 'Gauss_sep2.0_clust5', 'class_sep': 2.0, 'n_clusters_per_class': 5, 'flip_y': 0.0},
+    {'name': 'Gauss_sep1.0_clust3_flip0.05', 'class_sep': 1.0, 'n_clusters_per_class': 3, 'flip_y': 0.05},
 ]
 
 datasets = {
     "MNIST":      load_mnist,
     "CIFAR10":    load_cifar10,
-    # "CIFAR100":   load_cifar100,
-    # "20NG":       load_20newsgroups,
-    # "Imbalance":  load_imbalance,
-    # "WineQuality":load_wine_quality,
-    # "FashionMNIST":       load_fashion_mnist,
-    # "HAR":                load_har_ucihar
+    "CIFAR100":   load_cifar100,
+    "20NG":       load_20newsgroups,
+    "Imbalance":  load_imbalance,
+    "WineQuality":load_wine_quality,
+    "FashionMNIST":       load_fashion_mnist,
+    "HAR":                load_har_ucihar
 }
 
 for cfg in gauss_configs:
@@ -319,6 +198,103 @@ for cfg in gauss_configs:
             random_state=random_state
         )
 
+# ────────────────────────────────────────────────
+# 1. argparse로 하이퍼파라미터 & 옵션 받기
+# ────────────────────────────────────────────────
+parser = argparse.ArgumentParser(description="Optimizer 비교 실험 스크립트")
+parser.add_argument('--num_repeats',        type=int,   default=7,     help='실험 반복 횟수')
+parser.add_argument('--hidden_layer_size',  type=int,   default=10,     help='은닉층 수')
+parser.add_argument('--epochs',             type=int,   default=250,   help='학습 에폭 수')
+parser.add_argument('--batch_size',         type=int,   default=128,   help='배치 크기')
+parser.add_argument('--lr',                 type=float, default=1e-3,  help='학습률')
+parser.add_argument('--weight_decay',       type=float, default=1e-4,  help='Weight decay 값')
+parser.add_argument('--seed',               type=int,   default=0,     help='랜덤 시드')
+
+parser.add_argument('--batch_norm',         action='store_true', default=True,       help='Batch Normalization 사용 여부')
+parser.add_argument('--no_batch_norm',      action='store_false',      dest='batch_norm', help='Batch Normalization 미사용')
+parser.add_argument('--dropout_rate',       type=float, default=0.004, help='Dropout 비율')
+parser.add_argument('--label_smoothing',    type=float, default=0.025, help='Label smoothing 계수')
+parser.add_argument(
+    '--datasets',
+    nargs='+',
+    default=["MNIST", "CIFAR10"],
+    choices=list(datasets.keys()),
+    help='실험할 데이터셋 목록 (예: MNIST CIFAR10 Gauss_sep0.5_clust1)'
+)
+args = parser.parse_args()
+
+NUM_REPEATS         = args.num_repeats
+HIDDEN_LAYER_SIZE   = args.hidden_layer_size
+EPOCHS              = args.epochs
+BATCH_SIZE          = args.batch_size
+LR                  = args.lr
+WEIGHT_DECAY        = args.weight_decay
+SEED                = args.seed
+SAVE_INTERVAL       = 5
+DELTA               = 0.02
+BATCH_NORM          = args.batch_norm
+dropout_rate        = args.dropout_rate
+label_smoothing     = args.label_smoothing
+
+# ────────────────────────────────
+# 1-1. 선택된 데이터셋만 필터링
+# ──────────────────────────────── 
+
+selected_datasets = {
+    name: datasets[name]
+    for name in args.datasets
+}
+
+# ────────────────────────────────────────────────
+# 재현성을 위해 시드 고정
+# ────────────────────────────────────────────────
+os.environ['TF_DETERMINISTIC_OPS'] = '1'
+tf.config.experimental.enable_op_determinism()
+
+# ────────────────────────────────────────────────
+# 폴더 생성
+# ────────────────────────────────────────────────
+os.makedirs("figures", exist_ok=True)
+os.makedirs("logs", exist_ok=True)
+
+# --- 방어적 noninf / tost ---
+def noninf(x, y, delta):
+    d = x - y
+    if len(d) < 2 or d.std(ddof=1) == 0:
+        return np.nan
+    tstat = (d.mean() - delta) / (d.std(ddof=1) / np.sqrt(len(d)))
+    return t.cdf(tstat, df=len(d)-1)
+
+def tost(x, y, delta):
+    """Two One-Sided Test equivalence p-value."""
+    d = x - y
+    se = d.std(ddof=1) / np.sqrt(len(d))
+    t_low = (d.mean() + delta) / se       # upper bound
+    t_up  = (d.mean() - delta) / se       # lower bound
+    p_low = 1 - t.cdf(t_low, df=len(d)-1)
+    p_up  =     t.cdf(t_up,  df=len(d)-1)
+    return max(p_low, p_up)
+
+class TimeValHistory(tf.keras.callbacks.Callback):
+    """Keras 콜백 – 에폭별 소요시간 & val-loss 기록"""
+    def on_train_begin(self, logs=None):
+        self.times, self.val_losses = [], []
+        self.start = time.perf_counter()
+    def on_epoch_end(self, epoch, logs=None):
+        self.times.append(time.perf_counter() - self.start)
+        self.val_losses.append(logs["val_loss"])
+
+def cohens_d(x, y):
+    """
+    Compute Cohen's d for two arrays x, y.
+    d = (mean(x) - mean(y)) / pooled_sd
+    """
+    nx, ny = len(x), len(y)
+    mx, my = np.mean(x), np.mean(y)
+    vx, vy = np.var(x, ddof=1), np.var(y, ddof=1)
+    pooled_sd = np.sqrt(((nx-1)*vx + (ny-1)*vy) / (nx+ny-2))
+    return (mx - my) / pooled_sd
+
 # ────────────────────────────────
 # 2. 메인 실험 루프
 # ────────────────────────────────
@@ -326,7 +302,7 @@ results_list = []
 train_curve = {}
 val_curve    = {}  # 데이터셋별 val_loss 리스트
 
-for name, loader in datasets.items():
+for name, loader in selected_datasets.items():
     print(f"\n=== Dataset: {name} ===")
 
     # ── train_curve, val_curve 초기화
@@ -355,7 +331,7 @@ for name, loader in datasets.items():
         layer_sizes  = [input_dim] + [64]*HIDDEN_LAYER_SIZE + [num_classes]
 
         # ── 2-1. Custom ────────────────────────────────────────
-        dnn = DNN(layer_sizes=layer_sizes, batch_size=BATCH_SIZE)
+        dnn = DNN(layer_sizes=layer_sizes, batch_size=BATCH_SIZE, dropout_rate=dropout_rate, label_smoothing=label_smoothing)
         t0  = time.perf_counter()
         dnn.training(tf.convert_to_tensor(X_train, tf.float32),
                      tf.convert_to_tensor(y_train, tf.float32),

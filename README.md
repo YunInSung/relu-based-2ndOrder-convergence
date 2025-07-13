@@ -98,6 +98,8 @@ python prepare_har.py  # produces har_X.npy, har_y.npy in the root directory
 
 ### A. Basic MLP Optimization Experiments
 
+## Quick Start
+
 ```bash
 python experiment_runner.py \
   --epochs 250 \
@@ -106,21 +108,38 @@ python experiment_runner.py \
   --hidden_layer_size 10 \
   --lr 0.001 \
   --weight_decay 1e-4 \
-  --seed 42
+  --seed 42 \
+  --batch_norm \
+  --dropout_rate 0.004 \
+  --label_smoothing 0.025 \
+  --datasets MNIST CIFAR10
 ```
 
-* **--epochs**: Number of epochs (default: 250)
-* **--batch\_size**: Batch size (default: 128)
-* **--num\_repeats**: Number of repeats (default: 7)
-* **--hidden\_layer\_size**: Number of hidden layers in the MLP (excluding input and output layers) (default: 10)
-* **--lr**: Learning rate for baseline optimizers
-* **--weight\_decay**: For AdamW/AdaBelief only
-* **--seed**: Random seed
+---
+
+## Command-Line Options
+
+| Flag                  | Type          | Default         | Description                                                                                                                                          |
+| --------------------- | ------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--num_repeats`       | `int`         | `7`             | Number of times to repeat each experiment.                                                                                                           |
+| `--hidden_layer_size` | `int`         | `10`            | Number of hidden layers in the MLP (excluding input & output layers).                                                                                |
+| `--epochs`            | `int`         | `250`           | Number of training epochs per run.                                                                                                                   |
+| `--batch_size`        | `int`         | `128`           | Mini-batch size for training.                                                                                                                        |
+| `--lr`                | `float`       | `1e-3`          | Learning rate for baseline optimizers.                                                                                                               |
+| `--weight_decay`      | `float`       | `1e-4`          | Weight decay coefficient (used by AdamW and AdaBelief).                                                                                              |
+| `--seed`              | `int`         | `42`            | Random seed for reproducibility.                                                                                                                     |
+| `--batch_norm`        | *flag*        | **ON**          | Enable Batch Normalization layers.                                                                                                                   |
+| `--no_batch_norm`     | *flag*        |                 | Disable Batch Normalization layers.                                                                                                                  |
+| `--dropout_rate`      | `float`       | `0.004`         | Dropout rate to apply after each hidden layer.                                                                                                       |
+| `--label_smoothing`   | `float`       | `0.025`         | Label smoothing factor for cross-entropy loss.                                                                                                       |
+| `--datasets`          | `list of str` | `MNIST CIFAR10` | Datasets to run (choose from: `MNIST`, `CIFAR10`, `CIFAR100`, `20NG`, `Imbalance`, `WineQuality`, `FashionMNIST`, `HAR`, `Gauss_sep0.5_clust1`, … ). |
 
 > **Dataset note**
 > Because XLA's static graph can balloon in size, each run is limited to **two datasets** at a time.
 > By default the script trains on **MNIST** and **CIFAR‑10**.
-> To test other datasets (WineQuality‑Red, UCI HAR, synthetic Gaussians, …), uncomment the corresponding loaders in `experiment_runner.py` and launch a **separate run** for each additional pair.
+> To include others (e.g., WineQuality, UCI HAR, synthetic Gaussians), add their names to `--datasets` or launch separate runs.
+
+---
 
 ### Output files
 
