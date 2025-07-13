@@ -132,7 +132,8 @@ python experiment_runner.py \
 | `--no_batch_norm`     | *flag*        |                 | Disable Batch Normalization layers.                                                                                                                  |
 | `--dropout_rate`      | `float`       | `0.004`         | Dropout rate to apply after each hidden layer.                                                                                                       |
 | `--label_smoothing`   | `float`       | `0.025`         | Label smoothing factor for cross-entropy loss.                                                                                                       |
-| `--datasets`          | `list of str` | `MNIST CIFAR10` | Datasets to run (choose from: `MNIST`, `CIFAR10`, `CIFAR100`, `20NG`, `Imbalance`, `WineQuality`, `FashionMNIST`, `HAR`, `Gauss_sep0.5_clust1`, … ). |
+| `--datasets`          | `list of str` | `MNIST CIFAR10` | Datasets to run (choose from: `MNIST`, `CIFAR10`, `CIFAR100`, `20NG`, `Imbalance`, `WineQuality`, `FashionMNIST`, `HAR`, `Gauss_sep0.5_clust1`, `Gauss_sep1.0_clust3`, `Gauss_sep2.0_clust5`, `Gauss_sep1.0_clust3_flip0.05`). |
+
 
 > **Dataset note**
 > Because XLA's static graph can balloon in size, each run is limited to **two datasets** at a time.
