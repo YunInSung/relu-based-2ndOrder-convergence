@@ -7,3 +7,4 @@ tensorflow-addons==0.22.0
 tensorflow-estimator==2.15.0
 tensorflow-io-gcs-filesystem==0.37.1
 tensorflow-probability==0.25.0
+scipy==1.6.0
