@@ -2,7 +2,7 @@
 **Diagonal-Hessian Optimizer 🏎️💨** 
 A lightweight second-order method that guarantees global convergence using only the Hessian diagonal in ReLU/Leaky-ReLU MLPs.
 
-- 📈 **60 % faster** than Adam, **−20 % val loss** on 7 datasets (MNIST, CIFAR-10/100, 20NG, …)  
+- 📈 **60% faster** than Adam; >20% val-loss reduction on 10/12 datasets (exceptions: 20NG & Gauss_sep1.0_clust3_flip0.05)
 - 📜 Formal **global linear convergence proof** under δ-bounded diagonal assumption  
 - 🚀 Single-GPU friendly: pure TensorFlow 2.15 + XLA, no custom CUDA kernels  
 - ⚙️ **Reproducible**:  
