@@ -1,4 +1,24 @@
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YunInSung/relu-based-2ndOrder-convergence/blob/main/demo.ipynb)
+<!-- TL;DR – 10-line executive summary -->
+**Diagonal-Hessian Optimizer 🏎️💨**  
+ReLU / Leaky-ReLU MLP에서 **Hessian 대각**만으로 전역 수렴을 보장하는 **경량 2차 방법**입니다.
+
+- 📈 **60 % faster** than Adam, **−20 % val loss** on 7 datasets (MNIST, CIFAR-10/100, 20NG, …)  
+- 📜 Formal **global linear convergence proof** under δ-bounded diagonal assumption  
+- 🚀 Single-GPU friendly: pure TensorFlow 2.15 + XLA, no custom CUDA kernels  
+- ⚙️ **Reproducible**:  
+  ```bash
+  pip install -r requirements.txt
+  python experiment_runner.py
+  ```
+(See the 🚀 Running Experiments → Command-Line Options section below for detailed command-line options)
+- 🔍 Ablation: dropout 0.004 + label-smoothing 0.025 ⇒ best generalization  
+- 🧪 **Quick Demo (Colab T4)**  
+  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YunInSung/relu-based-2ndOrder-convergence/blob/main/demo.ipynb)
+
+<p align="center">
+  <img src="figs/loss_curve_thumb-7hidden.png" width="550"
+       alt="Training-vs-Validation Loss (Custom vs Adam)">
+</p>
 
 # ⚙️ Diagonal Hessian Optimizer Experiments
 
