@@ -15,6 +15,7 @@ _(See the 🚀 Running Experiments → Command-Line Options section below for de
 - 🧪 **Quick Demo (Colab T4)**  
   [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YunInSung/relu-based-2ndOrder-convergence/blob/main/demo.ipynb)
 
+
 <p align="center">
   <img src="figs/loss_curve_thumb-7hidden.png" width="550"
        alt="Training-vs-Validation Loss (Custom vs Adam)">
