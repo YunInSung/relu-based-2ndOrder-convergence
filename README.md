@@ -1,5 +1,6 @@
 <!-- TL;DR – 10-line executive summary -->
-**Diagonal-Hessian Optimizer 🏎️💨**  
+**Diagonal-Hessian Optimizer 🏎️💨** 
+[https://github.com/YunInSung/relu-based-2ndOrder-convergence](https://github.com/YunInSung/relu-based-2ndOrder-convergence)
 A lightweight second-order method that guarantees global convergence using only the Hessian diagonal in ReLU/Leaky-ReLU MLPs.
 
 - 📈 **60 % faster** than Adam, **−20 % val loss** on 7 datasets (MNIST, CIFAR-10/100, 20NG, …)  
