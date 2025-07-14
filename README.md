@@ -10,7 +10,7 @@ A lightweight second-order method that guarantees global convergence using only 
   pip install -r requirements.txt
   python experiment_runner.py
   ```
-(See the 🚀 Running Experiments → Command-Line Options section below for detailed command-line options)
+_(See the 🚀 Running Experiments → Command-Line Options section below for detailed options)_
 - 🔍 Ablation: dropout 0.004 + label-smoothing 0.025 ⇒ best generalization  
 - 🧪 **Quick Demo (Colab T4)**  
   [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YunInSung/relu-based-2ndOrder-convergence/blob/main/demo.ipynb)
