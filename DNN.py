@@ -189,7 +189,7 @@ class DNN:
         return L, lamb
     
     @tf.function(jit_compile=True)
-    def _hessian_block_step(self, X_batch, y_batch, epoch) :
+    def _hessian_block_step(self, X_batch, y_batch, update_step) :
         square = self.square
         _tensorOfH = self._tensorOfH
         _Hsolve = self._Hsolve
@@ -235,15 +235,15 @@ class DNN:
             beta1 = 0.25
             mW[idx].assign((beta1) * mW[idx] + (1 - beta1) * d2W)
             mb[idx].assign((beta1) * mb[idx] + (1 - beta1) * d2b)
-            mW_hat = mW[idx] / (1 - beta1 ** epoch)
-            mb_hat = mb[idx] / (1 - beta1 ** epoch)
+            mW_hat = mW[idx] / (1 - beta1 ** update_step)
+            mb_hat = mb[idx] / (1 - beta1 ** update_step)
 
             weights[idx].assign(cur_w - lr * mW_hat)
             biases[idx].assign(cur_b - lr * mb_hat)
 
     @tf.function(jit_compile=True)
-    def _train_step(self, X_batch, y_batch, epoch):
-        self._hessian_block_step(tf.transpose(X_batch), tf.transpose(y_batch), tf.cast(epoch+1, tf.float32))
+    def _train_step(self, X_batch, y_batch, update_step):
+        self._hessian_block_step(tf.transpose(X_batch), tf.transpose(y_batch), tf.cast(update_step, tf.float32))
 
     def training(self, X, y_onehot, X_val, y_val_onehot, epochs=5):
         N = tf.cast(tf.shape(X)[0], tf.int64)
@@ -252,11 +252,13 @@ class DNN:
         steps_per_epoch = tf.cast(tf.math.ceil(N / self.batch_size), tf.int64)
         loss_list = self.loss
         val_loss_list = self.val_loss
+        update_step = tf.Variable(1, trainable=False, dtype=tf.int64)
         for epoch in tf.range(epochs):
             # X_batch shape: [input_dim, batch_size]
             # y_batch: [output_dim, batch_size]
             for X_batch, y_batch in dataset.take(steps_per_epoch):
-                self._train_step(X_batch, y_batch, epoch)
+                self._train_step(X_batch, y_batch, update_step)
+                update_step.assign_add(1)
             if ((epoch + 1) % 5 == 0 or epoch == 0) :
                 loss = self.compute_loss(X, y_onehot)
                 val_loss = self.compute_loss(X_val, y_val_onehot)
