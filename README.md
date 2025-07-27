@@ -68,7 +68,7 @@ git clone https://github.com/YunInSung/relu-based-2ndOrder-convergence.git
 cd relu-based-2ndOrder-convergence
 
 # Create and activate a virtual environment
-python3 -m venv .venv
+python3.9 -m venv .venv
 source .venv/bin/activate      # Windows: .venv\Scripts\activate
 
 # Install dependencies
